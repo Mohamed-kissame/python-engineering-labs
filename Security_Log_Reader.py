@@ -1,0 +1,71 @@
+import json
+import os
+
+
+def load_security_logs(file_path: str) -> list[dict]:
+    """Read security events from a JSON file."""
+    try :
+        
+     with open(file_path, "r", encoding="utf-8") as file:
+        logs = json.load(file)
+    
+    except FileNotFoundError as error :
+        raise FileNotFoundError(f"File not Found : {file_path}") from error
+    
+    except json.JSONDecodeError as e :
+         raise ValueError(f"Invalid JSON: {e}") from e
+
+    if not isinstance(logs , list) :
+        raise TypeError("JSON root must be a list")
+    
+    return logs
+
+
+def analyze_security_logs(logs: list[dict]) -> dict:
+    """Calculate basic security log statistics."""
+    slow_responses = 0
+    unique_ips = set()
+
+    for entry in logs:
+        ip = entry["ip"]
+        response_time = entry["response_ms"]
+
+        unique_ips.add(ip)
+
+        if response_time > 200:
+            slow_responses += 1
+
+    return {
+        "total_events": len(logs),
+        "unique_ips": len(unique_ips),
+        "slow_responses": slow_responses,
+    }
+
+
+def display_report(logs: list[dict], report: dict) -> None:
+    """Display security events and their statistics."""
+    print("===== SECURITY LOG REPORT =====")
+
+    for entry in logs:
+        print(
+            f"IP: {entry['ip']} | "
+            f"Status: {entry['status']} | "
+            f"Time: {entry['response_ms']} ms"
+        )
+
+    print("\n===== SUMMARY =====")
+    print(f"Total events: {report['total_events']}")
+    print(f"Unique IPs: {report['unique_ips']}")
+    print(f"Slow responses: {report['slow_responses']}")
+
+
+if __name__ == "__main__":
+   try:
+    logs = load_security_logs("security_logs.json")
+    print(f"Loaded {len(logs)} security events")
+
+   except (FileNotFoundError, ValueError, TypeError) as error:
+    print(f"Error: {error}")
+   
+   report = analyze_security_logs(logs)
+   display_report(logs, report)

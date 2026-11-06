@@ -1,0 +1,33 @@
+
+[
+  {
+    "ip": "192.168.1.10",
+    "status": 200,
+    "response_ms": 120
+  },
+  {
+    "ip": "10.0.0.5",
+    "status": 404,
+    "response_ms": 350
+  },
+  {
+    "ip": "192.168.1.10",
+    "status": 403,
+    "response_ms": 180
+  },
+  {
+    "ip": "172.16.0.8",
+    "status": 500,
+    "response_ms": 600
+  },
+  {
+    "ip": "10.0.0.5",
+    "status": 401,
+    "response_ms": 220
+  },
+  {
+    "ip": "192.168.1.10",
+    "status": 200,
+    "response_ms": 90
+  }
+]

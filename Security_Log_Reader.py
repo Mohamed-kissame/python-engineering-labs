@@ -1,146 +1,37 @@
-import json
-import os
-
-def load_security_logs(file_path: str) -> list[dict]:
-    """Load and validate security events from a JSON file."""
-
-    try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            logs = json.load(file)
-
-    except FileNotFoundError as error:
-        raise FileNotFoundError(
-            f"Security log file not found: {file_path}"
-        ) from error
-
-    except json.JSONDecodeError as error:
-        raise ValueError(
-            f"Invalid JSON in '{file_path}': {error}"
-        ) from error
-
-   
-    if not isinstance(logs, list):
-        raise TypeError("JSON root must be a list of security events")
-
-   
-    for index, event in enumerate(logs, start=1):
-        try:
-            validate_log(event)
-        except (TypeError, ValueError) as error:
-            raise ValueError(
-                f"Invalid security event #{index}: {error}"
-            ) from error
-
-    return logs
-
-
-def analyze_security_logs(logs: list[dict]) -> dict:
-    """Calculate basic security log statistics."""
-    slow_responses = 0
-    unique_ips = set()
-
-    for entry in logs:
-        ip = entry["ip"]
-        response_time = entry["response_ms"]
-
-        unique_ips.add(ip)
-
-        if response_time > 200:
-            slow_responses += 1
-
-    return {
-        "total_events": len(logs),
-        "unique_ips": len(unique_ips),
-        "slow_responses": slow_responses,
-    }
-
-
-def validate_log(event : dict) -> None :
+class SecurityEvent:
     
-    if type(event) is not dict :
-        raise TypeError("Security event must be a dictionary") 
+    def __init__(self , ip : str , status : int , response_ms : int | float):
+        
+        if type(ip) is not str :
+            raise TypeError("The Ip must be a string")
+        
+        if not ip.strip() :
+            raise ValueError("the value must be non-empty")
+        
+        if type(status) is not int :
+            raise TypeError("The Status must be an int")
+        if not 100 <= status <= 599 :
+            raise ValueError("The status should be between 100 and 599")
+        
+        if type(response_ms) not in (int , float) :
+            raise TypeError("The response time must be a numeric")
+        if response_ms < 0 :
+            raise ValueError("The response time must be not negative")
+        
+        self.ip = ip
+        self.status = status
+        self.response_ms = response_ms
     
-    required_fields = {"ip", "status", "response_ms"}
+    def is_error(self) -> bool :
+        
+        return 400 <= self.status <= 599
+        
 
-    missing_fields = required_fields - event.keys()
+
+try:
+ Log = SecurityEvent("192.168.1.10" , 500 , 120 )
+ print(Log.is_error())
+ 
+except (TypeError , ValueError) as e :
+     print(e)
     
-    if missing_fields :
-        raise ValueError(f"Missing Fields : {missing_fields}")
-    
-    if type(event['ip']) is not str :
-        raise TypeError("ip Type Must be a string ")
-    
-    if not event['ip'].strip() :
-        raise ValueError("Ip cannot be empty")
-    
-    if type(event['status']) is not int :
-        raise TypeError("Status must be a int")
-    
-    if not 100 <= event['status'] <= 599 :
-        raise ValueError("Invalid HTTP status")
-    
-    if type(event['response_ms']) not in (int , float) :
-        raise TypeError("Response Time must be numeric")
-    if event['response_ms'] < 0 :
-        raise ValueError("Response time cannot be negative")
-
-def display_report(logs: list[dict], report: dict) -> None:
-    """Display security events and their statistics."""
-    print("===== SECURITY LOG REPORT =====")
-
-    for entry in logs:
-        print(
-            f"IP: {entry['ip']} | "
-            f"Status: {entry['status']} | "
-            f"Time: {entry['response_ms']} ms"
-        )
-
-    print("\n===== SUMMARY =====")
-    print(f"Total events: {report['total_events']}")
-    print(f"Unique IPs: {report['unique_ips']}")
-    print(f"Slow responses: {report['slow_responses']}")
-
-
-def export_report(report: dict, file_path: str) -> None:
-    """Serialize and export a security report to JSON."""
-
-   
-    try:
-        json_data = json.dumps(
-            report,
-            indent=4,
-            ensure_ascii=False,
-            allow_nan=False
-        )
-
-    except (TypeError, ValueError) as error:
-        raise ValueError(
-            f"Failed to serialize report: {error}"
-        ) from error
-
-   
-    try:
-        with open(file_path, "w", encoding="utf-8") as file:
-            file.write(json_data)
-
-    except OSError as error:
-        raise OSError(
-            f"Failed to export report to '{file_path}': {error}"
-        ) from error
-
-if __name__ == "__main__":
-   try:
-    logs = load_security_logs("security_logs.json")
-    print(f"Loaded {len(logs)} security events")
-
-   except (FileNotFoundError, ValueError, TypeError) as error:
-    print(f"Error: {error}")
-   
-   report = analyze_security_logs(logs)
-   display_report(logs, report)
-   try:
-    export_report(report, "report.json")
-    print("✅ Security report exported successfully!")
-
-   except (OSError, ValueError) as error:
-    print(f"❌ Export failed: {error}")

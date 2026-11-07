@@ -2,22 +2,40 @@ import json
 import os
 
 
-def load_security_logs(file_path: str) -> list[dict]:
-    """Read security events from a JSON file."""
-    try :
-        
-     with open(file_path, "r", encoding="utf-8") as file:
-        logs = json.load(file)
-    
-    except FileNotFoundError as error :
-        raise FileNotFoundError(f"File not Found : {file_path}") from error
-    
-    except json.JSONDecodeError as e :
-         raise ValueError(f"Invalid JSON: {e}") from e
 
-    if not isinstance(logs , list) :
-        raise TypeError("JSON root must be a list")
-    
+import json
+
+
+def load_security_logs(file_path: str) -> list[dict]:
+    """Load and validate security events from a JSON file."""
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            logs = json.load(file)
+
+    except FileNotFoundError as error:
+        raise FileNotFoundError(
+            f"Security log file not found: {file_path}"
+        ) from error
+
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            f"Invalid JSON in '{file_path}': {error}"
+        ) from error
+
+   
+    if not isinstance(logs, list):
+        raise TypeError("JSON root must be a list of security events")
+
+   
+    for index, event in enumerate(logs, start=1):
+        try:
+            validate_log(event)
+        except (TypeError, ValueError) as error:
+            raise ValueError(
+                f"Invalid security event #{index}: {error}"
+            ) from error
+
     return logs
 
 

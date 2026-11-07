@@ -42,6 +42,35 @@ def analyze_security_logs(logs: list[dict]) -> dict:
     }
 
 
+def validate_log(event : dict) -> None :
+    
+    if type(event) is not dict :
+        raise TypeError("Security event must be a dictionary") 
+    
+    required_fields = {"ip", "status", "response_ms"}
+
+    missing_fields = required_fields - event.keys()
+    
+    if missing_fields :
+        raise ValueError(f"Missing Fields : {missing_fields}")
+    
+    if type(event['ip']) is not str :
+        raise TypeError("ip Type Must be a string ")
+    
+    if not event['ip'].strip() :
+        raise ValueError("Ip cannot be empty")
+    
+    if type(event['status']) is not int :
+        raise TypeError("Status must be a int")
+    
+    if not 100 <= event['status'] <= 599 :
+        raise ValueError("Invalid HTTP status")
+    
+    if type(event['response_ms']) not in (int , float) :
+        raise TypeError("Response Time must be numeric")
+    if event['response_ms'] < 0 :
+        raise ValueError("Response time cannot be negative")
+
 def display_report(logs: list[dict], report: dict) -> None:
     """Display security events and their statistics."""
     print("===== SECURITY LOG REPORT =====")

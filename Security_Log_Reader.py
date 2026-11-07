@@ -1,11 +1,6 @@
 import json
 import os
 
-
-
-import json
-
-
 def load_security_logs(file_path: str) -> list[dict]:
     """Load and validate security events from a JSON file."""
 
